@@ -43,7 +43,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        eslint-version: ['8.57.0', '9.0.0']
+        eslint-version: ['8.57.0', '9.0.0', '10.0.0']
     name: test (eslint@${{ matrix.eslint-version }})
     steps:
       - name: Checkout
@@ -73,7 +73,7 @@ jobs:
         run: pnpm build
 
       - name: Type check
-        if: matrix.eslint-version == '9.0.0'
+        if: matrix.eslint-version == '10.0.0'
         run: pnpm typecheck
 
       - name: Run tests

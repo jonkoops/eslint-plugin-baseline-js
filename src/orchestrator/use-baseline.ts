@@ -108,10 +108,8 @@ const rule: Rule.RuleModule = {
   },
   create(ctx) {
     const _DEBUG = process.env.BASELINE_DEBUG === "1";
-    const sourceCode = ctx.getSourceCode?.();
-    const ast = sourceCode?.ast as { type?: string } | undefined;
     // Avoid running when the parser did not produce a JS Program (eg, non-ESTree processors)
-    if (ast && ast.type && ast.type !== "Program") return {};
+    if (ctx.sourceCode.ast.type !== "Program") return {};
     const opt = (ctx.options[0] ?? {}) as CommonRuleOptions;
     const baseline = getBaselineValue(opt);
     const ignoreFeaturePatterns = (opt.ignoreFeatures ?? []) as string[];
@@ -209,6 +207,10 @@ const rule: Rule.RuleModule = {
         "parserServices",
         "languageOptions",
         "sourceCode",
+        // v9+/v10 property replacements for deprecated context methods
+        "cwd",
+        "filename",
+        "physicalFilename",
       ]) {
         const src = ctx as unknown as Record<string, unknown>;
         if (src[k] != null) delegateCtx[k] = src[k];
@@ -274,10 +276,10 @@ const rule: Rule.RuleModule = {
     type ParserServicesLike = { program?: unknown; esTreeNodeToTSNodeMap?: unknown };
     type CtxLike = {
       parserServices?: ParserServicesLike;
-      sourceCode?: { parserServices?: ParserServicesLike };
+      sourceCode: { parserServices?: ParserServicesLike };
     };
     const cx = ctx as unknown as CtxLike;
-    const ps = cx.parserServices || cx.sourceCode?.parserServices;
+    const ps = cx.parserServices || cx.sourceCode.parserServices;
     const typedAvailable = !!ps?.program && !!ps?.esTreeNodeToTSNodeMap;
     const useTypesWeb = resolveUseTypes(includeWebApis);
     const useTypesJs = resolveUseTypes(includeJsBuiltins);
@@ -324,17 +326,13 @@ const rule: Rule.RuleModule = {
         "parserServices",
         "languageOptions",
         "sourceCode",
+        // v9+/v10 property replacements for deprecated context methods
+        "cwd",
+        "filename",
+        "physicalFilename",
       ]) {
         const src = ctx as unknown as Record<string, unknown>;
         if (src[k] != null) delegateCtx[k] = src[k];
-      }
-      if (
-        delegateCtx.sourceCode == null &&
-        typeof (ctx as unknown as { getSourceCode?: () => unknown }).getSourceCode === "function"
-      ) {
-        delegateCtx.sourceCode = (
-          ctx as unknown as { getSourceCode: () => unknown }
-        ).getSourceCode();
       }
       delegateCtx.options = [
         typedEnabled ? { descriptors, messages, typed: true } : { descriptors, messages },

@@ -1,14 +1,13 @@
 import type { Rule } from "eslint";
 
-// In ESLint v9, context.getScope() is not available.
-// Instead, use sourceCode.scopeManager to resolve the scope for a node.
 export function isUnboundIdentifier(
   context: Rule.RuleContext,
   name: string,
   refNode?: unknown,
 ): boolean {
-  const sc = (context as unknown as { sourceCode?: { scopeManager?: unknown } }).sourceCode
-    ?.scopeManager as { acquire?: (n: unknown) => unknown; globalScope?: unknown } | undefined;
+  const sc = context.sourceCode.scopeManager as
+    | { acquire?: (n: unknown) => unknown; globalScope?: unknown }
+    | undefined;
   if (!sc) return true; // Be conservative: treat as unbound when scope info is missing
   // Acquire a scope from refNode when provided; otherwise walk from globalScope.
   let scope: unknown = (refNode && sc.acquire?.(refNode)) || sc.globalScope || null;
@@ -65,8 +64,7 @@ export function isGlobalNotShadowed(
     return { found: false };
   }
 
-  const sourceCode = context.sourceCode as { getScope?: (n: unknown) => unknown };
-  if (!sourceCode?.getScope) return true; // Conservative: avoid false positives when scope info is missing
+  const sourceCode = context.sourceCode as { getScope: (n: unknown) => unknown };
   const scope = sourceCode.getScope(parentNode);
 
   let current: unknown = scope;
